@@ -1,0 +1,8 @@
+package requests
+
+type CreateUserRequest struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	RegionID *int64 `json:"region_id,omitempty"`
+}

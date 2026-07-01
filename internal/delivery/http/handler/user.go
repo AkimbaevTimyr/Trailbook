@@ -4,60 +4,79 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"tracking-backend/internal/delivery/http/requests"
 
+	"tracking-backend/internal/delivery/http/response"
 	"tracking-backend/internal/usecase"
 )
 
-// UserHandler handles HTTP requests for users.
 type UserHandler struct {
 	uc usecase.UserUsecase
 }
 
-// NewUserHandler creates a new UserHandler.
 func NewUserHandler(uc usecase.UserUsecase) *UserHandler {
 	return &UserHandler{uc: uc}
 }
 
-// GetUsers returns a list of all users.
 func (h *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.uc.GetUsers(r.Context())
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
+		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, users)
+	response.Success(w, users)
 }
 
-// GetUser returns a single user by ID.
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "invalid user id")
+		response.Error(w, http.StatusBadRequest, "invalid user id")
 		return
 	}
 
 	user, err := h.uc.GetUser(r.Context(), id)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error())
+		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	if user == nil {
-		respondWithError(w, http.StatusNotFound, "user not found")
+		response.Error(w, http.StatusNotFound, "user not found")
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, user)
+	response.Success(w, user)
 }
 
-func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(payload)
+func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	var req requests.CreateUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	user, err := h.uc.Create(r.Context(), req)
+	if err != nil {
+		if isValidationError(err) {
+			response.Error(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Created(w, user)
 }
 
-func respondWithError(w http.ResponseWriter, code int, message string) {
-	respondWithJSON(w, code, map[string]string{"error": message})
+func isValidationError(err error) bool {
+	if err == nil {
+		return false
+	}
+	switch err.Error() {
+	case "name is required", "email is required", "password must be at least 6 characters":
+		return true
+	}
+	return false
 }

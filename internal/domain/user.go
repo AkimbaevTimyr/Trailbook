@@ -2,17 +2,21 @@ package domain
 
 import "time"
 
-// User represents a user in the system.
 type User struct {
-	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
-	RegionID  *int64    `json:"region_id,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	ID           int64      `json:"id"`
+	Name         string     `json:"name"`
+	RegionID     *int64     `json:"region_id,omitempty"`
+	Email        string     `json:"email"`
+	PasswordHash string     `json:"-"`
+	AvatarURL    *string    `json:"avatar_url,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    *time.Time `json:"updated_at,omitempty"`
 }
 
-// Region represents a geographic region.
-type Region struct {
+type RefreshToken struct {
 	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
+	UserID    int64     `json:"user_id"`
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
 	CreatedAt time.Time `json:"created_at"`
 }

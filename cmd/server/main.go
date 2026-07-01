@@ -41,7 +41,11 @@ func main() {
 	userUC := usecase.NewUserUsecase(userRepo)
 	userHandler := handler.NewUserHandler(userUC)
 
-	r := httpDelivery.NewRouter(userHandler)
+	authUC := usecase.NewAuthUsecase(userRepo, cfg.JWTSecret)
+	authHandler := handler.NewAuthHandler(authUC)
+	authMW := httpDelivery.AuthMiddleware(authUC)
+
+	r := httpDelivery.NewRouter(userHandler, authHandler, authMW)
 	srv := server.New(cfg.Port, r)
 
 	go func() {
