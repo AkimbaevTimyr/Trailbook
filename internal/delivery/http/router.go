@@ -8,7 +8,6 @@ import (
 	"tracking-backend/internal/delivery/http/response"
 )
 
-// NewRouter builds and returns the application HTTP router.
 func NewRouter(userHandler *handler.UserHandler, authHandler *handler.AuthHandler, authMW func(http.Handler) http.Handler) http.Handler {
 	mux := http.NewServeMux()
 
@@ -23,11 +22,10 @@ func NewRouter(userHandler *handler.UserHandler, authHandler *handler.AuthHandle
 	mux.HandleFunc("POST /login", authHandler.Login)
 
 	mux.HandleFunc("GET /users", userHandler.GetUsers)
-	mux.HandleFunc("GET /users/{id}", userHandler.GetUser)
+	mux.Handle("GET /users/{id}", authMW(http.HandlerFunc(userHandler.GetUser)))
 	mux.HandleFunc("POST /users", userHandler.CreateUser)
 
 	return mux
 }
 
-// AuthMiddleware is an alias for middleware.Auth to keep wiring concise.
 var AuthMiddleware = middleware.Auth
