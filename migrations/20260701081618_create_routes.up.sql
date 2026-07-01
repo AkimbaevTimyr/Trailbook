@@ -29,16 +29,3 @@ CREATE INDEX idx_routes_type ON routes(route_type);
 CREATE INDEX idx_routes_difficulty ON routes(difficulty);
 CREATE INDEX idx_routes_distance ON routes(distance_km);
 CREATE INDEX idx_routes_created_by ON routes(created_by);
-
-CREATE TABLE IF NOT EXISTS route_points (
-    id          SERIAL PRIMARY KEY,
-    route_id    INTEGER NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
-    lat         DECIMAL(10, 8) NOT NULL,
-    lon         DECIMAL(11, 8) NOT NULL,
-    elevation   DECIMAL(8, 2),              -- метры
-    point_order INTEGER NOT NULL,
-    created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE INDEX idx_route_points_route ON route_points(route_id);
-CREATE INDEX idx_route_points_order ON route_points(route_id, point_order);

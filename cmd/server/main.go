@@ -41,11 +41,15 @@ func main() {
 	userUC := usecase.NewUserUsecase(userRepo)
 	userHandler := handler.NewUserHandler(userUC)
 
+	routeRepo := repository.NewRouteRepository(database.DB)
+	routeUC := usecase.NewRouteUsecase(routeRepo)
+	routeHandler := handler.NewRouteHandler(routeUC)
+
 	authUC := usecase.NewAuthUsecase(userRepo, cfg.JWTSecret)
 	authHandler := handler.NewAuthHandler(authUC)
 	authMW := httpDelivery.AuthMiddleware(authUC)
 
-	r := httpDelivery.NewRouter(userHandler, authHandler, authMW)
+	r := httpDelivery.NewRouter(userHandler, authHandler, routeHandler, authMW)
 	srv := server.New(cfg.Port, r)
 
 	go func() {

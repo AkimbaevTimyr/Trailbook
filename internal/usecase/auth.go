@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	"tracking-backend/internal/delivery/http/requests"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
+	"tracking-backend/internal/delivery/http/requests"
 	"tracking-backend/internal/domain"
 	"tracking-backend/internal/repository"
 )
@@ -20,8 +20,8 @@ const (
 
 // AuthUsecase defines the interface for authentication business logic.
 type AuthUsecase interface {
-	Login(ctx context.Context, req requests.LoginRequest) (*requests.TokenResponse, error)
-	VerifyToken(tokenString string) (*requests.JWTClaims, error)
+	Login(ctx context.Context, req requests.LoginRequest) (*domain.TokenResponse, error)
+	VerifyToken(tokenString string) (*domain.JWTClaims, error)
 }
 
 type authUsecase struct {
@@ -37,7 +37,7 @@ func NewAuthUsecase(userRepo repository.UserRepository, jwtSecret string) AuthUs
 	}
 }
 
-func (uc *authUsecase) Login(ctx context.Context, req requests.LoginRequest) (*requests.TokenResponse, error) {
+func (uc *authUsecase) Login(ctx context.Context, req requests.LoginRequest) (*domain.TokenResponse, error) {
 	if req.Email == "" || req.Password == "" {
 		return nil, errors.New("email and password are required")
 	}
@@ -59,15 +59,15 @@ func (uc *authUsecase) Login(ctx context.Context, req requests.LoginRequest) (*r
 		return nil, fmt.Errorf("generate token: %w", err)
 	}
 
-	return &requests.TokenResponse{
+	return &domain.TokenResponse{
 		AccessToken: token,
 		TokenType:   "Bearer",
 		ExpiresIn:   int64(accessTokenExpiry.Seconds()),
 	}, nil
 }
 
-func (uc *authUsecase) VerifyToken(tokenString string) (*requests.JWTClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &requests.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+func (uc *authUsecase) VerifyToken(tokenString string) (*domain.JWTClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &domain.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
@@ -77,7 +77,7 @@ func (uc *authUsecase) VerifyToken(tokenString string) (*requests.JWTClaims, err
 		return nil, fmt.Errorf("parse token: %w", err)
 	}
 
-	claims, ok := token.Claims.(*requests.JWTClaims)
+	claims, ok := token.Claims.(*domain.JWTClaims)
 	if !ok || !token.Valid {
 		return nil, errors.New("invalid token")
 	}
@@ -87,7 +87,7 @@ func (uc *authUsecase) VerifyToken(tokenString string) (*requests.JWTClaims, err
 
 func (uc *authUsecase) generateToken(user *domain.User) (string, error) {
 	now := time.Now()
-	claims := requests.JWTClaims{
+	claims := domain.JWTClaims{
 		UserID: user.ID,
 		Email:  user.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
